@@ -28,7 +28,7 @@ python self_pruning_network.py
 ```
 
 This will:
-1. Train five models with different λ values (0.0001, 0.001, 0.005, 0.01, 0.05)
+1. Train five models with different λ values (0.0002, 0.002, 0.02)
 2. Generate gate distribution plots for each model
 3. Generate detailed training history plots (Loss, Accuracy, Sparsity) for each model
 4. Create a RESULTS.md file with detailed analysis
