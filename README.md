@@ -21,11 +21,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-Run the training script:
-
-```bash
-python self_pruning_network.py
-```
+Run the training script self_pruning_network.ipynb
 
 This will:
 1. Train five models with different λ values (0.0002, 0.002, 0.02)
