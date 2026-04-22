@@ -105,15 +105,27 @@ A successful implementation shows:
 
 ## Customization
 
-You can modify:
-- Network architecture: Change `hidden_sizes` in `SelfPruningNetwork`
-- Lambda values: Adjust `lambda_values` in `main()`
-- Training epochs: Change `num_epochs` parameter
-- Pruning threshold: Modify `threshold` in `get_sparsity_stats()`
+### My Findings (Summary)
 
-## Notes
+- Baseline feed-forward model (ReLU + dropout, no explicit pruning) reached a maximum accuracy of `61.15%`.
+- Initial pruning attempts with weak lambda values gave poor sparsity, while strong lambda values caused model collapse.
+- Stabilized training by using mid-range lambda values and separate learning rates for weights and gates.
+- Added warmup before pruning and a ramp phase for smooth sparsity pressure.
+- Froze BatchNorm during pruning to make pruning decisions more meaningful.
 
-- Training on GPU is recommended (automatically detected)
-- CIFAR-10 dataset downloads automatically on first run
-- Each training run takes approximately 5-10 minutes on GPU
-- Results are reproducible with fixed random seed
+### Final Training Phase Design (Can be implemented later...)
+
+| Phase | Epochs | λ_eff | BN status | What happens |
+|---|---:|---|---|---|
+| Warmup | 1-8 | 0 | Active | Learn features; BN collects running statistics |
+| BN-adapt | 9-13 | 0 | Frozen | Weights re-adapt to frozen BN; no pruning pressure |
+| Ramp | 14-28 | 0→λ | Frozen | Gradual pruning; gates start separating |
+| Full | 29-80 | λ | Frozen | Full pruning pressure; bimodal gate distribution forms |
+
+### Key Fixes vs v1
+
+- `gate_scores` initialized to `+2.0` (gates start near `0.88`, not `0.5`) to give sparsity loss a clear direction.
+- Added a 5-epoch BN-adapt buffer between BN freezing and lambda start to avoid accuracy collapse.
+- Increased sparsity threshold to `0.1` (`sigmoid(x) < 0.01` needs `x < -4.6`, hard to reach in 80 epochs with `gate_lr=0.002`).
+- Increased gate LR to `0.01` so gates can move from around `2.0` to below `-2.2` (for threshold `0.1`).
+- Used tighter lambda range: `[5e-4, 2e-3, 6e-3]`; larger values were destructive with new gate initialization.
